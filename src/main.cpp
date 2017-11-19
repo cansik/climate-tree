@@ -31,8 +31,9 @@
 #define DHT_PIN D1
 #define DHT_TYPE DHT22
 
-#define RANGE_MIN (-50.0)
-#define RANGE_MAX 50.0
+#define RANGE_MIN (0.0)
+#define RANGE_MAX 30.0
+#define RANGE_ADJUSTMENT (-10.0)
 
 #define HUE_MIN 0
 #define HUE_MAX 255
@@ -40,12 +41,13 @@
 LEDRing leds = LEDRing(NUM_LEDS);
 DHT dht = DHT(DHT_PIN, DHT_TYPE);
 
-CHSV tempColor = fromHSV(0, 100, 100);
+CHSV tempColor = fromHSV(0, 0, 100);
 Timer timer = Timer(DHT_UPDATE_RATE);
 
 uint8_t colorIndex = 0;
 
 EasingFloat hueValue = EasingFloat();
+EasingFloat satValue = EasingFloat();
 
 double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -67,14 +69,12 @@ void setup() {
     dht.begin();
 
     leds.setup<DATA_PIN>();
+
+    satValue.set(255);
 }
 
 void loop() {
     if (timer.elapsed()) {
-        Serial.print("Val: ");
-        Serial.print(hueValue.getValue());
-        Serial.print(" ");
-
         float h = dht.readHumidity();
         float t = dht.readTemperature();
 
@@ -86,7 +86,7 @@ void loop() {
         float hic = dht.computeHeatIndex(t, h, false);
         // set color
         auto hue = min(HUE_MAX, max(HUE_MIN, mapf(hic, RANGE_MIN, RANGE_MAX, HUE_MIN, HUE_MAX)));
-        hueValue.set(static_cast<float>(hue));
+        hueValue.set(static_cast<float>(hue + RANGE_ADJUSTMENT));
 
         Serial.print("Color: ");
         Serial.print(hue);
@@ -111,7 +111,11 @@ void loop() {
 
     // update
     hueValue.update();
+    satValue.update();
+
     tempColor.hue = static_cast<uint8_t>(round(hueValue.getValue()));
+    tempColor.sat = static_cast<uint8_t>(satValue.getValue());
+
     colorIndex = static_cast<uint8_t>((colorIndex + 1) % 255);
 
     FastLED.show();
