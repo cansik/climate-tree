@@ -32,7 +32,7 @@
 #define DHT_TYPE DHT22
 
 #define RANGE_MIN (0.0)
-#define RANGE_MAX 30.0
+#define RANGE_MAX 50.0
 #define RANGE_ADJUSTMENT (-10.0)
 
 #define HUE_MIN 0
@@ -83,10 +83,10 @@ void loop() {
             return;
         }
 
-        float hic = dht.computeHeatIndex(t, h, false);
+        auto hic = static_cast<float>(dht.computeHeatIndex(t, h, false) + RANGE_ADJUSTMENT);
         // set color
         auto hue = min(HUE_MAX, max(HUE_MIN, mapf(hic, RANGE_MIN, RANGE_MAX, HUE_MIN, HUE_MAX)));
-        hueValue.set(static_cast<float>(hue + RANGE_ADJUSTMENT));
+        hueValue.set(static_cast<float>(hue));
 
         Serial.print("Color: ");
         Serial.print(hue);
