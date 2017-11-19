@@ -20,6 +20,7 @@
 #include "LEDRing.h"
 #include "MicroUtils.h"
 #include "Timer.h"
+#include "EasingFloat.h"
 
 #define UPDATES_PER_SECOND 100
 
@@ -30,10 +31,10 @@
 #define DHT_PIN D1
 #define DHT_TYPE DHT22
 
-#define RANGE_MIN (-10.0)
+#define RANGE_MIN (-50.0)
 #define RANGE_MAX 50.0
 
-#define HUE_MIN 128
+#define HUE_MIN 0
 #define HUE_MAX 255
 
 LEDRing leds = LEDRing(NUM_LEDS);
@@ -43,6 +44,8 @@ CHSV tempColor = fromHSV(0, 100, 100);
 Timer timer = Timer(DHT_UPDATE_RATE);
 
 uint8_t colorIndex = 0;
+
+EasingFloat hueValue = EasingFloat();
 
 double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -68,6 +71,10 @@ void setup() {
 
 void loop() {
     if (timer.elapsed()) {
+        Serial.print("Val: ");
+        Serial.print(hueValue.getValue());
+        Serial.print(" ");
+
         float h = dht.readHumidity();
         float t = dht.readTemperature();
 
@@ -78,16 +85,8 @@ void loop() {
 
         float hic = dht.computeHeatIndex(t, h, false);
         // set color
-        auto hue = static_cast<uint8_t>(min(HUE_MAX, max(HUE_MIN, mapf(hic, RANGE_MIN, RANGE_MAX, HUE_MIN, HUE_MAX))));
-        tempColor.hue = hue;
-
-        // overwrite with rainbow
-        if (hue == 255) {
-            colorIndex = static_cast<uint8_t>((colorIndex + 1) % 255);
-            showRainbow(colorIndex);
-        } else {
-            leds.all(tempColor);
-        }
+        auto hue = min(HUE_MAX, max(HUE_MIN, mapf(hic, RANGE_MIN, RANGE_MAX, HUE_MIN, HUE_MAX)));
+        hueValue.set(static_cast<float>(hue));
 
         Serial.print("Color: ");
         Serial.print(hue);
@@ -103,6 +102,18 @@ void loop() {
     }
 
     // write leds
+    // overwrite with rainbow
+    if (hueValue.getValue() > 254.0) {
+        showRainbow(colorIndex);
+    } else {
+        leds.all(tempColor);
+    }
+
+    // update
+    hueValue.update();
+    tempColor.hue = static_cast<uint8_t>(round(hueValue.getValue()));
+    colorIndex = static_cast<uint8_t>((colorIndex + 1) % 255);
+
     FastLED.show();
     FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
