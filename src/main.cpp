@@ -35,7 +35,7 @@
 #define RANGE_MAX 50.0
 #define RANGE_ADJUSTMENT (-10.0)
 
-#define HUE_MIN 0
+#define HUE_MIN 113
 #define HUE_MAX 255
 
 LEDRing leds = LEDRing(NUM_LEDS);
@@ -103,11 +103,14 @@ void loop() {
 
     // write leds
     // overwrite with rainbow
+    /*
     if (hueValue.getValue() > 254.0) {
         showRainbow(colorIndex);
     } else {
         leds.all(tempColor);
     }
+     */
+    showRainbow(colorIndex);
 
     // update
     hueValue.update();
