@@ -31,9 +31,9 @@
 #define DHT_PIN D1
 #define DHT_TYPE DHT22
 
-#define RANGE_MIN (0.0)
-#define RANGE_MAX 50.0
-#define RANGE_ADJUSTMENT (-10.0)
+#define RANGE_MIN (-40)
+#define RANGE_MAX 40.0
+#define RANGE_ADJUSTMENT (0.0)
 
 #define HUE_MIN 113
 #define HUE_MAX 255
@@ -102,15 +102,7 @@ void loop() {
     }
 
     // write leds
-    // overwrite with rainbow
-    /*
-    if (hueValue.getValue() > 254.0) {
-        showRainbow(colorIndex);
-    } else {
-        leds.all(tempColor);
-    }
-     */
-    showRainbow(colorIndex);
+    leds.all(tempColor);
 
     // update
     hueValue.update();
